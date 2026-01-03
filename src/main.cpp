@@ -1,6 +1,7 @@
 #include <Arduino.h>
 #include <Preferences.h>
 #include <FastLED.h>
+#include <font2812.h>
 
 #define NET
 #define GRAPH
@@ -28,7 +29,7 @@
 #define C3OLED
 
 #define LOCAL_IP (132)
-#define DEF_BRIGHTNESS  (32)
+#define DEF_BRIGHTNESS  (8)
 #define DEF_XRES (32)
 #define DEF_YRES (8)
 
@@ -125,6 +126,8 @@ Arduino_GFX *gfx = new Arduino_GC9107(bus, DF_GFX_RST, 1 /* rotation */, true /*
 #define MAKPIX(r,g,b) ( ( r << 16 ) | ( g << 8 ) | ( b ) )
 
 CRGB leds[MAX_NUM_LEDS];
+CRGB map_back[7*5*256]; // 256 character background map to store bitmap
+
 #ifdef S3ZERO
 CRGB leds_aux[NUM_LEDS_AUX];
 #endif
@@ -156,331 +159,6 @@ unsigned timer_ct=0;
 // proto
 void draw_text(String txt1, String txt2, String txt3);
 void gfx_init(void);
-void draw_string(String txt, CRGB* buf, unsigned offs);
-unsigned draw_char(uint8_t a, unsigned bufpos, CRGB* buf);
-void font_init(void);
-
-
-void draw_string(String txt, CRGB* buf, unsigned bufoffs)
-{
-  const char* cstr = txt.c_str();
-
-  for (int i=0; i<txt.length(); ++i)
-  {
-    uint8_t a = cstr[i];
-    // render the font
-    int offs = draw_char(a, bufoffs, buf) + 1*yres; // 1 pixel space
-    bufoffs += offs;
-  }
-}
-
-#define x (0xff)
-#define o (0x00)
-#define FONT_HEIGHT (7)
-
-uint8_t font_wid[128] = {
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  1,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,
-  0,5,5,5,5,5,5,5,5,5,5,5,5,5,5,5,
-  5,5,5,5,5,5,5,5,5,5,5,0,0,0,0,0,
-  0,5,4,4,4,4,3,4,3,1,2,3,1,5,4,4,
-  0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0
-};
-
-uint16_t font_pos[128];
-
-
-void font_init(void)
-{
-  int i;
-
-  font_pos[65] = 0;
-  for (i=66; i<(65+26); ++i)
-  {
-    font_pos[i] = font_pos[i-1] + FONT_HEIGHT*font_wid[i-1];
-  }
-
-  font_pos[97] = (font_pos[65+25] + FONT_HEIGHT*font_wid[65+25]);
-  for (i=98; i<(97+26); ++i)
-  {
-    font_pos[i] = font_pos[i-1] + FONT_HEIGHT*font_wid[i-1];
-  }
-
-  font_pos[32] = font_pos[97+25] + FONT_HEIGHT*font_wid[97+25];
-
-
-}
-
-uint8_t font_bmp[] = {
-
-  o,o,o,o,x,x,x,
-  o,o,x,x,x,o,o,
-  x,x,x,o,x,o,o,
-  o,o,x,x,x,o,o,
-  o,o,o,o,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,o,o,x,o,o,x,
-  x,o,o,x,o,o,x,
-  x,x,o,x,o,x,x,
-  o,x,x,x,x,x,o,
-
-  x,x,x,x,x,x,x,
-  x,o,o,o,o,o,x,
-  x,o,o,o,o,o,x,
-  x,o,o,o,o,o,x,
-  x,o,o,o,o,o,x,
-
-  x,x,x,x,x,x,x,
-  x,o,o,o,o,o,x,
-  x,o,o,o,o,o,x,
-  x,x,o,o,o,x,x,
-  o,x,x,x,x,x,o,
-
-  x,x,x,x,x,x,x,
-  x,o,o,x,o,o,x,
-  x,o,o,x,o,o,x,
-  x,o,o,x,o,o,x,
-  x,o,o,x,o,o,x,
-
-  x,x,x,x,x,x,x,
-  x,o,o,x,o,o,o,
-  x,o,o,x,o,o,o,
-  x,o,o,x,o,o,o,
-  x,o,o,x,o,o,o,
-
-  x,x,x,x,x,x,x,
-  x,o,o,o,o,o,x,
-  x,o,o,x,o,o,x,
-  x,o,o,x,o,o,x,
-  x,o,o,x,x,x,x,
-  
-  x,x,x,x,x,x,x,
-  o,o,o,x,o,o,o,
-  o,o,o,x,o,o,o,
-  o,o,o,x,o,o,o,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x, 
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,  // L
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x, 
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,  // p
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x, 
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,  // T
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x, 
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,  // x
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  x,x,x,x,x,x,x,  // Z
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-  
-  o,o,o,o,x,x,o, // 910
-  o,o,o,x,o,o,x,
-  o,o,o,x,o,o,x,
-  o,o,o,x,x,x,x,
-  o,o,o,o,o,o,x,
-
-  x,x,x,x,x,x,x,
-  o,o,o,x,o,o,x,
-  o,o,o,x,o,o,x,
-  o,o,o,o,x,x,o,
-
-  o,o,o,o,x,x,o,
-  o,o,o,x,o,o,x,
-  o,o,o,x,o,o,x,
-  o,o,o,x,o,o,x,
-  
-  o,o,o,o,x,x,o,
-  o,o,o,x,o,o,x,
-  o,o,o,x,o,o,x,
-  x,x,x,x,x,x,x,
-
-  o,o,o,o,x,x,o,
-  o,o,o,x,o,o,x,
-  o,o,o,x,x,o,x,
-  o,o,o,x,x,o,x,
-
-  o,o,o,o,x,o,o,
-  o,x,x,x,x,x,x,
-  o,x,o,o,x,o,o,
-  
-  o,o,x,x,o,o,x,
-  o,x,o,o,x,o,x,
-  o,x,o,o,x,o,x,
-  o,o,x,x,x,x,o,
-
-  o,x,x,x,x,x,x,
-  o,o,o,o,x,o,o,
-  o,o,o,o,x,x,x,
-
-  o,x,o,x,x,x,x,
-
-  o,x,o,x,x,x,x,
-  o,o,o,o,o,o,x,
-
-  o,x,x,x,x,x,x,
-  o,o,o,o,x,o,o,
-  o,o,x,x,x,x,x,
-
-  o,x,x,x,x,x,x,
-
-  o,o,o,x,x,x,x,
-  o,o,o,x,x,o,o,
-  o,o,o,o,x,x,o,
-  o,o,o,x,x,o,o,
-  o,o,o,x,x,x,x,
-
-  o,o,x,x,x,x,x,
-  o,o,o,x,x,o,o,
-  o,o,o,x,x,o,o,
-  o,o,o,x,x,x,x,
-
-  o,o,o,o,x,x,o,
-  o,o,o,x,o,o,x,
-  o,o,o,x,o,o,x,
-  o,o,o,o,x,x,o,
-
-  o,o,o,o,o,o,o,
-  o,o,o,o,o,o,o,
-  o,o,o,o,o,o,o,
-  o,o,o,o,o,o,o,
-  o,o,o,o,o,o,o,
-
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-  x,x,x,x,x,x,x,
-
-};
-
-unsigned draw_char(uint8_t a, unsigned bufpos, CRGB* buf)
-{
-  unsigned w = 5;
-  unsigned h = 7;
-  unsigned i,j,k;
-
-  w = font_wid[a];
-  k = font_pos[a];
-  for (i=0; i<w; i++)
-  {
-    for (j=0; j<h; ++j)
-    {
-        unsigned pix = font_bmp[k++];
-        //if (i & 1)
-        unsigned base = bufpos + i*yres;
-        if (base & 8)
-        {
-          buf[i*yres + yres - 1 - j + bufpos] = pix | (pix<<8) | (pix<<16);
-        }
-        else
-        {
-          buf[i*yres + j + bufpos] = pix | (pix<<8) | (pix<<16);
-        }
-    }
-  }
-
-  return w*yres;
-}
-
 
 
 void shift_color(CHSV& incolor, int color_freq);
@@ -546,7 +224,8 @@ void setup()
 
   font_init();
  
-  draw_string("Hello Good", leds, 0);
+  font_draw("Hello and Merry Christmas and a Happy New Year!!!", map_back, 0, yres);
+  font_xfer(map_back, leds, xres, yres, 0);
 #endif
 
 
@@ -657,7 +336,7 @@ void loop()
     if (but_trig)
     {
       memset(leds, 0, sizeof(CRGB)*MAX_NUM_LEDS);
-      draw_string("Hello Good", leds, offs);
+      font_xfer(map_back, leds, xres, yres, offs);
       offs += 1* yres;
     }
 
