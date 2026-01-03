@@ -1,5 +1,5 @@
 #include <font2812.h>
-#include <font2812_sz7.h>
+#include <font2812_sz7h4.h>
 
 unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres);
 
@@ -19,6 +19,13 @@ void font_init(void)
     font_pos[i] = font_pos[i-1] + FONT_HEIGHT*font_wid[i-1];
   }
   font_pos[32] = font_pos[97+25] + FONT_HEIGHT*font_wid[97+25];
+  font_pos[33] = font_pos[32] + FONT_HEIGHT*font_wid[32]; // !
+  font_pos[42] = font_pos[33] + FONT_HEIGHT*font_wid[33]; // *
+  font_pos[63] = font_pos[42] + FONT_HEIGHT*font_wid[42]; // ?
+
+
+
+
 }
 
 // render text onto a buffer of height yres (which can be different from font height)
@@ -56,12 +63,6 @@ unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres)
     for (j=0; j<h; ++j)
     {
         unsigned pix = font_bmp[k++];
-//        unsigned base = bufpos + i*yres;
-//        if (base & 8)
-//        {
-//          buf[i*yres + yres - 1 - j + bufpos] = pix | (pix<<8) | (pix<<16);
-//        }
-//        else
         {
           buf[i*yres + j + bufpos] = pix | (pix<<8) | (pix<<16);
         }
@@ -79,21 +80,22 @@ unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres)
 // yres: horiz resolution of dest and source bitmap
 // srcoffs: start offset 
 
-void font_xfer(CRGB* src, CRGB* dst, unsigned xres, unsigned yres, unsigned srcoffs)
+void font_xfer(CRGB* src, CRGB* dst, unsigned xres, unsigned yres, unsigned srcoffs, unsigned srclen)
 {
   for (unsigned i=0; i<xres; ++i)
   {
-    unsigned base = i*yres;
+    unsigned dstbase = i*yres;
+    unsigned srcbase = (i*yres + srcoffs) % srclen;
     for (unsigned j=0; j<yres; ++j)
     {
-        CRGB pix = src[i*yres + j + srcoffs];
-        if (base & 8)
+        CRGB pix = src[srcbase + j];
+        if (dstbase & 8)
         {
-          dst[i*yres + yres - 1 - j] = pix;
+          dst[dstbase + yres - 1 - j] = pix;
         }
         else
         {
-          dst[i*yres + j] = pix;
+          dst[dstbase + j] = pix;
         }
     }
   }

@@ -29,7 +29,7 @@
 #define C3OLED
 
 #define LOCAL_IP (132)
-#define DEF_BRIGHTNESS  (8)
+#define DEF_BRIGHTNESS  (32)
 #define DEF_XRES (32)
 #define DEF_YRES (8)
 
@@ -125,8 +125,11 @@ Arduino_GFX *gfx = new Arduino_GC9107(bus, DF_GFX_RST, 1 /* rotation */, true /*
 #define MAKPIX_SCL(r,g,b,scl) ( ( (unsigned)(r*scl) << 16 ) | ( (unsigned)(g*scl) << 8 ) | ( (unsigned)(b*scl) ) )
 #define MAKPIX(r,g,b) ( ( r << 16 ) | ( g << 8 ) | ( b ) )
 
+#define BACK_BUFFER_LEN (8*5*256)
+
+
 CRGB leds[MAX_NUM_LEDS];
-CRGB map_back[7*5*256]; // 256 character background map to store bitmap
+CRGB map_back[BACK_BUFFER_LEN]; // 256 character background map to store bitmap
 
 #ifdef S3ZERO
 CRGB leds_aux[NUM_LEDS_AUX];
@@ -224,8 +227,9 @@ void setup()
 
   font_init();
  
-  font_draw("Hello and Merry Christmas and a Happy New Year!!!", map_back, 0, yres);
-  font_xfer(map_back, leds, xres, yres, 0);
+  //font_draw("Hello and Merry Christmas and a Happy New Year!!!", map_back, 0, yres);
+  font_draw("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*? Merry Christmas and a Happy New Year to *All*!!!", map_back, 0, yres);
+  font_xfer(map_back, leds, xres, yres, 0, BACK_BUFFER_LEN);
 #endif
 
 
@@ -333,10 +337,10 @@ void loop()
 #endif
 
     //if (timer_ct == 100)
-    if (but_trig)
+    //if (but_trig)
     {
       memset(leds, 0, sizeof(CRGB)*MAX_NUM_LEDS);
-      font_xfer(map_back, leds, xres, yres, offs);
+      font_xfer(map_back, leds, xres, yres, offs, 87*6*8);
       offs += 1* yres;
     }
 
@@ -345,7 +349,7 @@ void loop()
   ++timer_ct;
   
 
-  FastLED.delay(1);
+  FastLED.delay(100);
 }
 
 
