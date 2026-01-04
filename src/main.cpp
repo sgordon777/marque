@@ -29,7 +29,7 @@
 #define C3OLED
 
 #define LOCAL_IP (132)
-#define DEF_BRIGHTNESS  (32)
+#define DEF_BRIGHTNESS  (64)
 #define DEF_XRES (32)
 #define DEF_YRES (8)
 
@@ -228,7 +228,7 @@ void setup()
   font_init();
  
   //font_draw("Hello and Merry Christmas and a Happy New Year!!!", map_back, 0, yres);
-  font_draw("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*? Merry Christmas and a Happy New Year to *All*!!!", map_back, 0, yres);
+  font_draw("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*? Merry Christmas and a Happy New Year to *All*!!! 0123456789°", map_back, 0, yres);
   font_xfer(map_back, leds, xres, yres, 0, BACK_BUFFER_LEN);
 #endif
 
@@ -340,7 +340,7 @@ void loop()
     //if (but_trig)
     {
       memset(leds, 0, sizeof(CRGB)*MAX_NUM_LEDS);
-      font_xfer(map_back, leds, xres, yres, offs, 87*6*8);
+      font_xfer(map_back, leds, xres, yres, offs, 107*6*8);
       offs += 1* yres;
     }
 

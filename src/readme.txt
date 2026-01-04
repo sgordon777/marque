@@ -32,18 +32,11 @@
 
 
 todo: 
-  x -add starfield sim: sin(x[] with randomized freq and/or phase) v4
-  x -more "trad" v3
-  x -set count remotel v3
-  x -store settings in nvram v3
-  x -gLobal brightness control v3
-  x -command to write v3
-  x -more pong animations v4
-  x -randomize v4
-  -change "cycles" to be based time 
-  x -c3-OLD board support
-  x -Way to select subset of patterns
-  remove "ovr" scheme, give eacj value defai;tested, 6
-  add "start" param to start on a particular animation, 6
+  -8-bit offscreen framebuffer, expand to 24-bit using 256 color LUT (ie color pallette)
+  -API for color font drawing
+  -special fonts, ie birthday cake, celebrate, etc
+  -HTTP interface for setting message
+
+
 
 */

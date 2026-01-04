@@ -21,8 +21,20 @@ void font_init(void)
   font_pos[32] = font_pos[97+25] + FONT_HEIGHT*font_wid[97+25];
   font_pos[33] = font_pos[32] + FONT_HEIGHT*font_wid[32]; // !
   font_pos[42] = font_pos[33] + FONT_HEIGHT*font_wid[33]; // *
-  font_pos[63] = font_pos[42] + FONT_HEIGHT*font_wid[42]; // ?
 
+  font_pos[48] = font_pos[42] + FONT_HEIGHT*font_wid[42]; // 0
+  font_pos[49] = font_pos[48] + FONT_HEIGHT*font_wid[48]; // 1
+  font_pos[50] = font_pos[49] + FONT_HEIGHT*font_wid[49]; // 2
+  font_pos[51] = font_pos[50] + FONT_HEIGHT*font_wid[50]; // 3
+  font_pos[52] = font_pos[51] + FONT_HEIGHT*font_wid[51]; // 4
+  font_pos[53] = font_pos[52] + FONT_HEIGHT*font_wid[52]; // 5
+  font_pos[54] = font_pos[53] + FONT_HEIGHT*font_wid[53]; // 6
+  font_pos[55] = font_pos[54] + FONT_HEIGHT*font_wid[54]; // 7
+  font_pos[56] = font_pos[55] + FONT_HEIGHT*font_wid[55]; // 8
+  font_pos[57] = font_pos[56] + FONT_HEIGHT*font_wid[56]; // 9
+  font_pos[63] = font_pos[57] + FONT_HEIGHT*font_wid[57]; // ?
+  font_pos[176] = font_pos[63] + FONT_HEIGHT*font_wid[63]; // °
+//  font_pos[126] = font_pos[63] + FONT_HEIGHT*font_wid[63]; // °
 
 
 
@@ -64,7 +76,10 @@ unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres)
     {
         unsigned pix = font_bmp[k++];
         {
-          buf[i*yres + j + bufpos] = pix | (pix<<8) | (pix<<16);
+          //buf[i*yres + j + bufpos] = pix | (pix<<8) | (pix<<16);
+          //buf[i*yres + j + bufpos] = pix;
+          //buf[i*yres + j + bufpos] = pix<<8;
+          buf[i*yres + j + bufpos] = pix<<16;
         }
     }
   }
