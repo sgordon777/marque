@@ -39,7 +39,7 @@
 #define NUM_LEDS_DEF (32)
 #define LED_TYPE    WS2812
 #define COLOR_ORDER GRB // GRB for 2812 strip, RGB for christmas lights
-#define DEB_THRESH (10)
+#define DEB_THRESH (7)
 
 // 6 scroll
 #define BASE_SCROLL (1)
@@ -129,7 +129,7 @@ Arduino_GFX *gfx = new Arduino_GC9107(bus, DF_GFX_RST, 1 /* rotation */, true /*
 
 
 CRGB leds[MAX_NUM_LEDS];
-CRGB map_back[BACK_BUFFER_LEN]; // 256 character background map to store bitmap
+uint8_t map_back[BACK_BUFFER_LEN]; // 256 character background map to store bitmap
 
 #ifdef S3ZERO
 CRGB leds_aux[NUM_LEDS_AUX];
@@ -158,6 +158,8 @@ unsigned storecount = 0;
 // global
 unsigned num_leds;
 unsigned timer_ct=0;
+unsigned bitmap_sz=0;
+
 
 // proto
 void draw_text(String txt1, String txt2, String txt3);
@@ -223,12 +225,20 @@ void setup()
   WiFi.mode(WIFI_STA);
   WiFi.disconnect();
   delay(100);  // ?????
-
+  unsigned offs;
 
   font_init();
  
-  //font_draw("Hello and Merry Christmas and a Happy New Year!!!", map_back, 0, yres);
-  font_draw("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*? Merry Christmas and a Happy New Year to *All*!!! 0123456789°", map_back, 0, yres);
+  //unsigned offs = font_draw("ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz!*? Merry Christmas and a Happy New Year to *All*!!! 0123456789°", map_back, 0, yres, 6);
+
+  offs = font_draw("ABCDEFGHIJKLMNOPQRSTUVWXYZ", map_back, 0, yres, COLOR_CYCLE, 1, 7);
+  offs = font_draw("abcdefghijklmnopqrstuvwxyz!*?", map_back, offs, yres, COLOR_ALT2, 2,3);
+  offs = font_draw("Merry Christmas to all, and to all a good night!!!", map_back, offs, yres, COLOR_ALT3, 1,2,3);
+  offs = font_draw("0123456789°", map_back, offs, yres, 5);
+  offs = font_draw("!@#$%^&*()_'`[]", map_back, offs, yres, 7);
+
+  bitmap_sz = offs;
+
   font_xfer(map_back, leds, xres, yres, 0, BACK_BUFFER_LEN);
 #endif
 
@@ -340,7 +350,7 @@ void loop()
     //if (but_trig)
     {
       memset(leds, 0, sizeof(CRGB)*MAX_NUM_LEDS);
-      font_xfer(map_back, leds, xres, yres, offs, 107*6*8);
+      font_xfer(map_back, leds, xres, yres, offs, bitmap_sz);
       offs += 1* yres;
     }
 
@@ -349,7 +359,7 @@ void loop()
   ++timer_ct;
   
 
-  FastLED.delay(100);
+  FastLED.delay(200);
 }
 
 

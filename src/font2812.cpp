@@ -1,42 +1,33 @@
 #include <font2812.h>
-#include <font2812_sz7h4.h>
+#include <font2812_sz7h5.h>
 
-unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres);
+
+CRGB pallet[] = {
+  CRGB(0,0,0),              // 0=black
+  CRGB(255,0,0),            // 1=red
+  CRGB(0,255,0),            // 2=green
+  CRGB(0,0,255),            // 3=blue
+  CRGB(255,255,0),          // 4=yellow
+  CRGB(0,255,255),          // 5=cyan
+  CRGB(255,0,255),          // 6=magenta
+  CRGB(255,255,255)         // 7=white        
+};
+
+#define NUM_COLOR       (8)
+
+unsigned font_char(uint8_t a, uint8_t* bufoffs, unsigned bufpos, unsigned yres, unsigned fgcolor);
 
 void font_init(void)
 {
   int i;
 
-  font_pos[65] = 0;
-  for (i=66; i<(65+26); ++i)
+  font_pos[32] = 0;
+  for (i=33; i<(123); ++i)  // space to 'z'
   {
     font_pos[i] = font_pos[i-1] + FONT_HEIGHT*font_wid[i-1];
   }
 
-  font_pos[97] = (font_pos[65+25] + FONT_HEIGHT*font_wid[65+25]);
-  for (i=98; i<(97+26); ++i)
-  {
-    font_pos[i] = font_pos[i-1] + FONT_HEIGHT*font_wid[i-1];
-  }
-  font_pos[32] = font_pos[97+25] + FONT_HEIGHT*font_wid[97+25];
-  font_pos[33] = font_pos[32] + FONT_HEIGHT*font_wid[32]; // !
-  font_pos[42] = font_pos[33] + FONT_HEIGHT*font_wid[33]; // *
-
-  font_pos[48] = font_pos[42] + FONT_HEIGHT*font_wid[42]; // 0
-  font_pos[49] = font_pos[48] + FONT_HEIGHT*font_wid[48]; // 1
-  font_pos[50] = font_pos[49] + FONT_HEIGHT*font_wid[49]; // 2
-  font_pos[51] = font_pos[50] + FONT_HEIGHT*font_wid[50]; // 3
-  font_pos[52] = font_pos[51] + FONT_HEIGHT*font_wid[51]; // 4
-  font_pos[53] = font_pos[52] + FONT_HEIGHT*font_wid[52]; // 5
-  font_pos[54] = font_pos[53] + FONT_HEIGHT*font_wid[53]; // 6
-  font_pos[55] = font_pos[54] + FONT_HEIGHT*font_wid[54]; // 7
-  font_pos[56] = font_pos[55] + FONT_HEIGHT*font_wid[55]; // 8
-  font_pos[57] = font_pos[56] + FONT_HEIGHT*font_wid[56]; // 9
-  font_pos[63] = font_pos[57] + FONT_HEIGHT*font_wid[57]; // ?
-  font_pos[176] = font_pos[63] + FONT_HEIGHT*font_wid[63]; // °
-//  font_pos[126] = font_pos[63] + FONT_HEIGHT*font_wid[63]; // °
-
-
+  font_pos[176] = font_pos[122] + FONT_HEIGHT*font_wid[122]; // °
 
 }
 
@@ -48,21 +39,52 @@ void font_init(void)
 // yres : height in pixels of bitmap
 //
 //
-void font_draw(String txt, CRGB* buf, unsigned bufoffs, unsigned yres)
+unsigned font_draw(String txt, uint8_t* buf, unsigned bufoffs, unsigned yres, unsigned fgcolor, unsigned p1, unsigned p2, unsigned p3)
 {
   const char* cstr = txt.c_str();
+  unsigned color = fgcolor;
+
+  if (fgcolor == COLOR_CYCLE)
+    color = p1;
+  else if (fgcolor == COLOR_ALT2)
+    color = p1;
+  if (fgcolor == COLOR_ALT3)
+    color = p1;
 
   for (int i=0; i<txt.length(); ++i)
   {
-    uint8_t a = cstr[i];
+
     // render the font
-    int offs = font_char(a, buf, bufoffs,  yres) + yres; // 1 pixel space
+    uint8_t a = cstr[i];
+    int offs = font_char(a, buf, bufoffs,  yres, color) + yres; // 1 pixel space
     bufoffs += offs;
+    
+    if (fgcolor == COLOR_CYCLE)
+    {
+      if (color == p2) color = p1;
+      color = color + 1;
+    }
+    if (fgcolor == COLOR_ALT2)
+    {
+        if (color == p1) color = p2;
+        else if (color == p2) color = p1;
+    }
+    if (fgcolor == COLOR_ALT3)
+    {
+        if (color == p1) color = p2;
+        else if (color == p2) color = p3;
+        else if (color == p3) color = p1;
+    }
+    if (color >= NUM_COLOR) color = 1;
+
   }
+  return bufoffs;
 }
 
 
-unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres)
+
+
+unsigned font_char(uint8_t a, uint8_t* buf, unsigned bufpos, unsigned yres, unsigned fgcolor)
 {
   unsigned w = 5;
   unsigned h = FONT_HEIGHT;
@@ -75,12 +97,17 @@ unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres)
     for (j=0; j<h; ++j)
     {
         unsigned pix = font_bmp[k++];
+
+        // 0 : background, don't ever override
+        // 1-255 : pallet colors, override with fgcolor unless fgcolor is COLOR_DEFAULT
+        if (pix != 0)
         {
-          //buf[i*yres + j + bufpos] = pix | (pix<<8) | (pix<<16);
-          //buf[i*yres + j + bufpos] = pix;
-          //buf[i*yres + j + bufpos] = pix<<8;
-          buf[i*yres + j + bufpos] = pix<<16;
+            if (fgcolor != COLOR_DEFAULT)
+            {
+                pix = fgcolor;
+            }
         }
+        buf[i*yres + j + bufpos] = pix;
     }
   }
 
@@ -95,7 +122,7 @@ unsigned font_char(uint8_t a, CRGB* buf, unsigned bufpos, unsigned yres)
 // yres: horiz resolution of dest and source bitmap
 // srcoffs: start offset 
 
-void font_xfer(CRGB* src, CRGB* dst, unsigned xres, unsigned yres, unsigned srcoffs, unsigned srclen)
+void font_xfer(uint8_t* src, CRGB* dst, unsigned xres, unsigned yres, unsigned srcoffs, unsigned srclen)
 {
   for (unsigned i=0; i<xres; ++i)
   {
@@ -103,14 +130,14 @@ void font_xfer(CRGB* src, CRGB* dst, unsigned xres, unsigned yres, unsigned srco
     unsigned srcbase = (i*yres + srcoffs) % srclen;
     for (unsigned j=0; j<yres; ++j)
     {
-        CRGB pix = src[srcbase + j];
+        uint8_t pix = src[srcbase + j];
         if (dstbase & 8)
         {
-          dst[dstbase + yres - 1 - j] = pix;
+          dst[dstbase + yres - 1 - j] = pallet[pix];
         }
         else
         {
-          dst[dstbase + j] = pix;
+          dst[dstbase + j] = pallet[pix];
         }
     }
   }
